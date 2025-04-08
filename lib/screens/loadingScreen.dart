@@ -7,6 +7,8 @@ import 'package:loading_animation_widget/loading_animation_widget.dart';
 import 'dart:convert';
 
 import 'package:workmates/data/global_data.dart' as gd;
+import 'package:workmates/models/Session.dart';
+
 
 
 class LoadingScreen extends StatefulWidget {
@@ -64,32 +66,36 @@ class LoadingScreenState extends State<LoadingScreen> {
     );
   }
 
-
   Future<void> loadSession() async {
     try {
       // Effectuer la requête HTTP GET
       final response = await http.get(
         Uri.parse('${gd.serverUrl}/sessions'),
-
       );
 
       if (response.statusCode == 200) {
         debugPrint('Response status: ${response.statusCode}');
         debugPrint('Response body: ${response.body}');
 
-        // Décoder la réponse JSON
-        Map<String, dynamic> data = jsonDecode(response.body);
+        // ✅ Décoder directement en List<dynamic>
+        List<dynamic> jsonList = jsonDecode(response.body);
 
+        // ✅ Parser chaque élément avec fromJson
+        gd.allSessions = jsonList.map((item) => Session.fromJson(item)).toList();
 
-
+        // ✅ Naviguer vers /home
+        if (mounted) {
+          Navigator.pushReplacementNamed(context, "/home");
+        }
       } else {
         debugPrint('Error: ${response.body}');
-        throw Exception('Failed to load learning sessions');
+        throw Exception('Failed to load sessions');
       }
     } catch (e) {
       debugPrint('Exception: $e');
-      throw Exception('Failed to load learning sessions');
+      throw Exception('Failed to load sessions');
     }
   }
+
 }
 
