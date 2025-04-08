@@ -107,6 +107,218 @@ class _MainScreenState extends State<MainScreen> {
     );
   }
 
+  final DateFormat backendDateFormat = DateFormat('yyyy-MM-dd HH:mm:ss');
+
+
+  Future<void> _updateSession(Session session) async {
+    try {
+
+      debugPrint('Session à modifier : ${session.id}');
+
+
+      // Convertir l'objet Session en JSON
+      final String sessionJson = jsonEncode({
+        'id': session.id,
+        'nom': session.name,
+        'adresse_numero': session.addressNumber,
+        'adresse_rue': session.streetName,
+        'code_postal': session.zipCode,
+        'ville': session.city,
+        'date_debut': backendDateFormat.format(session.startDate), // Format correct
+        'date_fin': backendDateFormat.format(session.endDate),     // Format correct
+      });
+
+
+      final response = await http.put(
+        Uri.parse('$serverUrl/sessions/${session.id}'),
+        headers: {'Content-Type': 'application/json'},
+        body: sessionJson,
+      );
+      debugPrint('Response status: ${response.statusCode}');
+      debugPrint('Response body: ${response.body}');
+
+
+      if (response.statusCode == 200) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Session modifiée avec succès')),
+        );
+        await _fetchSessions();
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erreur lors de la modification : ${response.statusCode}')),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erreur de connexion : $e')),
+      );
+    }
+  }
+  void _showEditModal(Session session) {
+    final TextEditingController nameController =
+    TextEditingController(text: session.name);
+    final TextEditingController addressNumberController =
+    TextEditingController(text: session.addressNumber.toString());
+    final TextEditingController streetNameController =
+    TextEditingController(text: session.streetName);
+    final TextEditingController zipCodeController =
+    TextEditingController(text: session.zipCode.toString());
+    final TextEditingController cityController =
+    TextEditingController(text: session.city);
+
+    DateTime startDate = session.startDate;
+    DateTime endDate = session.endDate;
+
+    Future<void> _selectDate(BuildContext context, bool isStartDate) async {
+      final DateTime? picked = await showDatePicker(
+        context: context,
+        initialDate: isStartDate ? startDate : endDate,
+        firstDate: DateTime.now().subtract(const Duration(days: 365)),
+        lastDate: DateTime.now().add(const Duration(days: 365 * 5)),
+      );
+
+      if (picked != null) {
+        final TimeOfDay? timePicked = await showTimePicker(
+          context: context,
+          initialTime: TimeOfDay.fromDateTime(
+              isStartDate ? startDate : endDate),
+        );
+
+        if (timePicked != null) {
+          setState(() {
+            final DateTime newDateTime = DateTime(
+              picked.year,
+              picked.month,
+              picked.day,
+              timePicked.hour,
+              timePicked.minute,
+            );
+
+            if (isStartDate) {
+              startDate = newDateTime;
+              if (endDate.isBefore(startDate)) {
+                endDate = startDate.add(const Duration(hours: 1));
+              }
+            } else {
+              endDate = newDateTime;
+            }
+          });
+        }
+      }
+    }
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (BuildContext context) {
+        return Padding(
+          padding: EdgeInsets.only(
+            left: 16,
+            right: 16,
+            top: 16,
+            bottom: MediaQuery.of(context).viewInsets.bottom + 16,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'Modifier la session',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: nameController,
+                decoration: const InputDecoration(labelText: 'Nom de la session'),
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Flexible(
+                    flex: 1,
+                    child: TextField(
+                      controller: addressNumberController,
+                      decoration: const InputDecoration(labelText: 'N°'),
+                      keyboardType: TextInputType.number,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Flexible(
+                    flex: 2,
+                    child: TextField(
+                      controller: streetNameController,
+                      decoration: const InputDecoration(labelText: 'Rue'),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Flexible(
+                    flex: 1,
+                    child: TextField(
+                      controller: zipCodeController,
+                      decoration: const InputDecoration(labelText: 'Code postal'),
+                      keyboardType: TextInputType.number,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Flexible(
+                    flex: 2,
+                    child: TextField(
+                      controller: cityController,
+                      decoration: const InputDecoration(labelText: 'Ville'),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              ListTile(
+                title: Text(
+                  'Début : ${DateFormat('dd/MM/yyyy • HH:mm').format(startDate)}',
+                ),
+                trailing: const Icon(Icons.calendar_today),
+                onTap: () => _selectDate(context, true),
+              ),
+              ListTile(
+                title: Text(
+                  'Fin : ${DateFormat('dd/MM/yyyy • HH:mm').format(endDate)}',
+                ),
+                trailing: const Icon(Icons.calendar_today),
+                onTap: () => _selectDate(context, false),
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  final updatedSession = Session(
+                    id: session.id,
+                    name: nameController.text,
+                    addressNumber: addressNumberController.text,
+                    streetName: streetNameController.text,
+                    zipCode: zipCodeController.text,
+                    city: cityController.text,
+                    startDate: startDate,
+                    endDate: endDate,
+                  );
+                  _updateSession(updatedSession);
+                },
+                child: const Text('Enregistrer les modifications'),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+
   String _formatDate(DateTime date) {
     return DateFormat('dd/MM/yyyy • HH:mm').format(date);
   }
@@ -218,22 +430,22 @@ class _MainScreenState extends State<MainScreen> {
                             fontWeight: FontWeight.bold,
                           ),
                         ),
-                        Container(
-                          decoration:
-                          BoxDecoration(
-                            borderRadius:
-                            BorderRadius.circular(8),
-                            border: Border.all(
-                              color: Colors.grey.shade300,
+                        Column(
+
+                          children: [
+                            IconButton(
+                              icon: const Icon(Icons.edit,
+                                  color: Colors.blue),
+                              onPressed: () => _showEditModal(session),
                             ),
-                          ),
-                          child: IconButton(
-                            icon: const Icon(Icons.delete,
-                                color: Colors.red),
-                            onPressed: () =>
-                                _showDeleteConfirmationDialog(
-                                    session),
-                          ),
+                            IconButton(
+                              icon: const Icon(Icons.delete,
+                                  color: Colors.red),
+                              onPressed: () =>
+                                  _showDeleteConfirmationDialog(
+                                      session),
+                            ),
+                          ],
                         ),
                       ],
                     ),
