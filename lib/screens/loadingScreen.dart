@@ -51,6 +51,7 @@ class LoadingScreenState extends State<LoadingScreen> {
                       color: Theme.of(context).colorScheme.primary, size: 50),
                   const SizedBox(height: 20),
                   Text('Chargement...', style: TextStyle(fontSize: 20)),
+                  Text('${currentAction}', style: TextStyle(fontSize: 16)),
                 ],
               ),
             ),
@@ -58,7 +59,7 @@ class LoadingScreenState extends State<LoadingScreen> {
           SizedBox(
             height: 50,
             child: Center(
-              child: Text('© ' + DateTime.now().year.toString() + ' Wevox', style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.primary)),
+              child: Text('© ' + DateTime.now().year.toString() + ' MEV', style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.primary)),
             ),
           ),
         ],
@@ -82,6 +83,9 @@ class LoadingScreenState extends State<LoadingScreen> {
 
         // ✅ Parser chaque élément avec fromJson
         gd.allSessions = jsonList.map((item) => Session.fromJson(item)).toList();
+
+        //attendre 2 secondes
+        await Future.delayed(const Duration(seconds: 2));
 
         // ✅ Naviguer vers /home
         if (mounted) {
