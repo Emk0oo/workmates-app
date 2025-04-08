@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:workmates/models/Session.dart';
-import 'package:workmates/global_data.dart';
+import 'package:workmates/data/global_data.dart';
 
 class SessionsView extends StatefulWidget {
   const SessionsView({Key? key}) : super(key: key);
