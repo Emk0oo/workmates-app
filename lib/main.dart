@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:workmates/screens/loadingScreen.dart';
+import 'package:workmates/screens/mainScreen.dart';
 
 
 import 'data/global_data.dart' as gd;
@@ -66,7 +67,7 @@ class MyApp extends StatelessWidget {
       routes: {
         //'/login': (context) => const LoginScreen(),
         '/loadingScreen': (context) => const LoadingScreen(),
-        //'/home': (context) => const MainScreen(),
+        '/home': (context) => const MainScreen(),
       },
       home: const LoadingScreen(),
 
