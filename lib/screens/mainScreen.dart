@@ -41,7 +41,7 @@ class _MainScreenState extends State<MainScreen> {
       } else {
         setState(() {
           _errorMessage =
-              'Erreur lors du chargement des sessions: ${response.statusCode}';
+          'Erreur lors du chargement des sessions: ${response.statusCode}';
           _isLoading = false;
         });
       }
@@ -51,6 +51,60 @@ class _MainScreenState extends State<MainScreen> {
         _isLoading = false;
       });
     }
+  }
+
+  Future<void> _deleteSession(int sessionId) async {
+    try {
+      final response = await http.delete(
+        Uri.parse('$serverUrl/sessions/$sessionId'),
+      );
+
+      if (response.statusCode == 204) {
+        debugPrint('Session supprimée avec succès. Pour l id $sessionId');
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Session supprimée avec succès')),
+        );
+        // Rafraîchir la liste après suppression
+        await _fetchSessions();
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erreur lors de la suppression : ${response.statusCode}')),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erreur de connexion : $e')),
+      );
+    }
+  }
+
+  void _showDeleteConfirmationDialog(Session session) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Confirmer la suppression'),
+          content: Text(
+              'Êtes-vous sûr de vouloir supprimer la session "${session.name}" ?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Annuler'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                _deleteSession(session.id);
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+              ),
+              child: const Text('Supprimer'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   String _formatDate(DateTime date) {
@@ -76,158 +130,179 @@ class _MainScreenState extends State<MainScreen> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _errorMessage.isNotEmpty
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        _errorMessage,
-                        style: const TextStyle(color: Colors.red),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 16),
-                      ElevatedButton(
-                        onPressed: _fetchSessions,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor:
-                              Theme.of(context).colorScheme.primary,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(
-                              vertical: 12, horizontal: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+          ? Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              _errorMessage,
+              style: const TextStyle(color: Colors.red),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: _fetchSessions,
+              style: ElevatedButton.styleFrom(
+                backgroundColor:
+                Theme.of(context).colorScheme.primary,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(
+                    vertical: 12, horizontal: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                elevation: 0,
+              ),
+              child: const Text('Réessayer'),
+            ),
+          ],
+        ),
+      )
+          : allSessions.isEmpty
+          ? Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.event_busy,
+              size: 64,
+              color: Colors.grey[400],
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Aucune session disponible',
+              style: TextStyle(
+                fontSize: 18,
+                color: Colors.grey[600],
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Créez une nouvelle session pour commencer',
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey[500],
+              ),
+            ),
+          ],
+        ),
+      )
+          : RefreshIndicator(
+        onRefresh: _fetchSessions,
+        child: ListView.builder(
+          padding: const EdgeInsets.all(16),
+          itemCount: allSessions.length,
+          itemBuilder: (context, index) {
+            final session = allSessions[index] as Session;
+            return Card(
+              margin: const EdgeInsets.only(bottom: 16),
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+                side: BorderSide(color: Colors.grey.shade200),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment:
+                      MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          session.name,
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
                           ),
-                          elevation: 0,
                         ),
-                        child: const Text('Réessayer'),
-                      ),
-                    ],
-                  ),
-                )
-              : allSessions.isEmpty
-                  ? Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.event_busy,
-                            size: 64,
-                            color: Colors.grey[400],
-                          ),
-                          const SizedBox(height: 16),
-                          Text(
-                            'Aucune session disponible',
-                            style: TextStyle(
-                              fontSize: 18,
-                              color: Colors.grey[600],
-                              fontWeight: FontWeight.w500,
+                        Container(
+                          decoration:
+                          BoxDecoration(
+                            borderRadius:
+                            BorderRadius.circular(8),
+                            border: Border.all(
+                              color: Colors.grey.shade300,
                             ),
                           ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'Créez une nouvelle session pour commencer',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.grey[500],
-                            ),
+                          child: IconButton(
+                            icon: const Icon(Icons.delete,
+                                color: Colors.red),
+                            onPressed: () =>
+                                _showDeleteConfirmationDialog(
+                                    session),
                           ),
-                        ],
-                      ),
-                    )
-                  : RefreshIndicator(
-                      onRefresh: _fetchSessions,
-                      child: ListView.builder(
-                        padding: const EdgeInsets.all(16),
-                        itemCount: allSessions.length,
-                        itemBuilder: (context, index) {
-                          final session = allSessions[index] as Session;
-                          return Card(
-                            margin: const EdgeInsets.only(bottom: 16),
-                            elevation: 0,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              side: BorderSide(color: Colors.grey.shade200),
-                            ),
-                            child: Padding(
-                              padding: const EdgeInsets.all(16.0),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    session.name,
-                                    style: const TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 12),
-                                  Row(
-                                    children: [
-                                      Icon(Icons.location_on,
-                                          size: 18,
-                                          color: Theme.of(context)
-                                              .colorScheme
-                                              .primary),
-                                      const SizedBox(width: 8),
-                                      Expanded(
-                                        child: Text(
-                                          '${session.addressNumber} ${session.streetName}, ${session.zipCode} ${session.city}',
-                                          style: TextStyle(
-                                            color: Colors.grey[700],
-                                            fontSize: 14,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Row(
-                                    children: [
-                                      Icon(Icons.access_time,
-                                          size: 18,
-                                          color: Theme.of(context)
-                                              .colorScheme
-                                              .primary),
-                                      const SizedBox(width: 8),
-                                      Text(
-                                        _formatDate(session.startDate),
-                                        style: TextStyle(
-                                          color: Colors.grey[700],
-                                          fontSize: 14,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Row(
-                                    children: [
-                                      Icon(Icons.access_time_filled,
-                                          size: 18,
-                                          color: Theme.of(context)
-                                              .colorScheme
-                                              .primary),
-                                      const SizedBox(width: 8),
-                                      Text(
-                                        _formatDate(session.endDate),
-                                        style: TextStyle(
-                                          color: Colors.grey[700],
-                                          fontSize: 14,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ),
-                          );
-                        },
-                      ),
+                        ),
+                      ],
                     ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Icon(Icons.location_on,
+                            size: 18,
+                            color: Theme.of(context)
+                                .colorScheme
+                                .primary),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            '${session.addressNumber} ${session.streetName}, ${session.zipCode} ${session.city}',
+                            style: TextStyle(
+                              color: Colors.grey[700],
+                              fontSize: 14,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Icon(Icons.access_time,
+                            size: 18,
+                            color: Theme.of(context)
+                                .colorScheme
+                                .primary),
+                        const SizedBox(width: 8),
+                        Text(
+                          _formatDate(session.startDate),
+                          style: TextStyle(
+                            color: Colors.grey[700],
+                            fontSize: 14,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        Icon(Icons.access_time_filled,
+                            size: 18,
+                            color: Theme.of(context)
+                                .colorScheme
+                                .primary),
+                        const SizedBox(width: 8),
+                        Text(
+                          _formatDate(session.endDate),
+                          style: TextStyle(
+                            color: Colors.grey[700],
+                            fontSize: 14,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        ),
+      ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
-          debugPrint('Créer une session cliqué');
           Navigator.pushNamed(context, "/createSession").then((_) {
-            // Rafraîchir la liste après la création d'une nouvelle session
             _fetchSessions();
           });
         },
