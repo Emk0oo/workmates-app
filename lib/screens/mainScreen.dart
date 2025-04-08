@@ -54,7 +54,7 @@ class _MainScreenState extends State<MainScreen> {
   }
 
   String _formatDate(DateTime date) {
-    return DateFormat('dd/MM/yyyy HH:mm').format(date);
+    return DateFormat('dd/MM/yyyy • HH:mm').format(date);
   }
 
   @override
@@ -62,6 +62,10 @@ class _MainScreenState extends State<MainScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Sessions de travail'),
+        elevation: 0,
+        backgroundColor: Colors.transparent,
+        foregroundColor: Theme.of(context).colorScheme.primary,
+        centerTitle: true,
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
@@ -84,22 +88,66 @@ class _MainScreenState extends State<MainScreen> {
                       const SizedBox(height: 16),
                       ElevatedButton(
                         onPressed: _fetchSessions,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor:
+                              Theme.of(context).colorScheme.primary,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(
+                              vertical: 12, horizontal: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          elevation: 0,
+                        ),
                         child: const Text('Réessayer'),
                       ),
                     ],
                   ),
                 )
               : allSessions.isEmpty
-                  ? const Center(child: Text('Aucune session disponible'))
+                  ? Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.event_busy,
+                            size: 64,
+                            color: Colors.grey[400],
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            'Aucune session disponible',
+                            style: TextStyle(
+                              fontSize: 18,
+                              color: Colors.grey[600],
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Créez une nouvelle session pour commencer',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey[500],
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
                   : RefreshIndicator(
                       onRefresh: _fetchSessions,
                       child: ListView.builder(
+                        padding: const EdgeInsets.all(16),
                         itemCount: allSessions.length,
                         itemBuilder: (context, index) {
                           final session = allSessions[index] as Session;
                           return Card(
-                            margin: const EdgeInsets.symmetric(
-                                horizontal: 16, vertical: 8),
+                            margin: const EdgeInsets.only(bottom: 16),
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              side: BorderSide(color: Colors.grey.shade200),
+                            ),
                             child: Padding(
                               padding: const EdgeInsets.all(16.0),
                               child: Column(
@@ -112,16 +160,61 @@ class _MainScreenState extends State<MainScreen> {
                                       fontWeight: FontWeight.bold,
                                     ),
                                   ),
-                                  const SizedBox(height: 8),
-                                  Text(
-                                    'Adresse: ${session.addressNumber} ${session.streetName}, ${session.zipCode} ${session.city}',
+                                  const SizedBox(height: 12),
+                                  Row(
+                                    children: [
+                                      Icon(Icons.location_on,
+                                          size: 18,
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .primary),
+                                      const SizedBox(width: 8),
+                                      Expanded(
+                                        child: Text(
+                                          '${session.addressNumber} ${session.streetName}, ${session.zipCode} ${session.city}',
+                                          style: TextStyle(
+                                            color: Colors.grey[700],
+                                            fontSize: 14,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                   const SizedBox(height: 8),
-                                  Text(
-                                    'Début: ${_formatDate(session.startDate)}',
+                                  Row(
+                                    children: [
+                                      Icon(Icons.access_time,
+                                          size: 18,
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .primary),
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        _formatDate(session.startDate),
+                                        style: TextStyle(
+                                          color: Colors.grey[700],
+                                          fontSize: 14,
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                                  Text(
-                                    'Fin: ${_formatDate(session.endDate)}',
+                                  const SizedBox(height: 4),
+                                  Row(
+                                    children: [
+                                      Icon(Icons.access_time_filled,
+                                          size: 18,
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .primary),
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        _formatDate(session.endDate),
+                                        style: TextStyle(
+                                          color: Colors.grey[700],
+                                          fontSize: 14,
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ],
                               ),
@@ -130,13 +223,17 @@ class _MainScreenState extends State<MainScreen> {
                         },
                       ),
                     ),
-
-      // Bouton flottant avec position centrée en bas
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
           debugPrint('Créer une session cliqué');
-          Navigator.pushNamed(context, "/createSession");
+          Navigator.pushNamed(context, "/createSession").then((_) {
+            // Rafraîchir la liste après la création d'une nouvelle session
+            _fetchSessions();
+          });
         },
+        backgroundColor: Theme.of(context).colorScheme.primary,
+        foregroundColor: Colors.white,
+        elevation: 2,
         icon: const Icon(Icons.add),
         label: const Text('Créer une session'),
       ),
