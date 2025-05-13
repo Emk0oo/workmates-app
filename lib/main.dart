@@ -3,7 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:workmates/screens/createSessionScreen.dart';
 import 'package:workmates/screens/loadingScreen.dart';
 import 'package:workmates/screens/mainScreen.dart';
-
+import 'package:workmates/screens/loginScreen.dart';
+import 'package:workmates/screens/registerScreen.dart';
 
 import 'data/global_data.dart' as gd;
 
@@ -13,12 +14,12 @@ Future<void> main() async {
   runApp(const MyApp()); // <-- Ajout essentiel
 }
 
-
 Future setPortraitMode() async {
   await SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
   ]);
 }
+
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
@@ -63,17 +64,28 @@ class MyApp extends StatelessWidget {
         ),
       ),
 
+      // Choisissez UNE des deux approches ci-dessous:
 
-      // Routes
+      // SOIT Option 1: Utilisez initialRoute et routes avec une entrée '/'
+      initialRoute: '/',
       routes: {
-        //'/login': (context) => const LoginScreen(),
+        '/': (context) => const LoadingScreen(),
+        '/login': (context) => const LoginScreen(),
+        '/register': (context) => const RegisterScreen(),
         '/loadingScreen': (context) => const LoadingScreen(),
         '/home': (context) => const MainScreen(),
         '/createSession': (context) => const CreateSessionScreen(),
       },
-      home: const LoadingScreen(),
 
-      // '/login',
+      // OU Option 2: Utilisez home sans route '/' (supprimez les 5 lignes ci-dessus)
+      // home: const LoadingScreen(),
+      // routes: {
+      //   '/login': (context) => const LoginScreen(),
+      //   '/register': (context) => const RegisterScreen(),
+      //   '/loadingScreen': (context) => const LoadingScreen(),
+      //   '/home': (context) => const MainScreen(),
+      //   '/createSession': (context) => const CreateSessionScreen(),
+      // },
     );
   }
 }

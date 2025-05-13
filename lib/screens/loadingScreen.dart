@@ -9,8 +9,6 @@ import 'dart:convert';
 import 'package:workmates/data/global_data.dart' as gd;
 import 'package:workmates/models/Session.dart';
 
-
-
 class LoadingScreen extends StatefulWidget {
   const LoadingScreen({super.key});
 
@@ -26,6 +24,16 @@ class LoadingScreenState extends State<LoadingScreen> {
   @override
   void initState() {
     super.initState();
+    // Vérifier l'authentification au démarrage
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (gd.appToken.isEmpty) {
+        // Si pas de token, rediriger vers login
+        Navigator.of(context).pushReplacementNamed('/login');
+      } else {
+        // Si token existe, charger les sessions et aller à home
+        loadSession();
+      }
+    });
   }
 
   @override
@@ -59,7 +67,10 @@ class LoadingScreenState extends State<LoadingScreen> {
           SizedBox(
             height: 50,
             child: Center(
-              child: Text('© ' + DateTime.now().year.toString() + ' MEV', style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.primary)),
+              child: Text('© ' + DateTime.now().year.toString() + ' MEV',
+                  style: TextStyle(
+                      fontSize: 12,
+                      color: Theme.of(context).colorScheme.primary)),
             ),
           ),
         ],
@@ -82,7 +93,8 @@ class LoadingScreenState extends State<LoadingScreen> {
         List<dynamic> jsonList = jsonDecode(response.body);
 
         // ✅ Parser chaque élément avec fromJson
-        gd.allSessions = jsonList.map((item) => Session.fromJson(item)).toList();
+        gd.allSessions =
+            jsonList.map((item) => Session.fromJson(item)).toList();
 
         //attendre 2 secondes
         await Future.delayed(const Duration(seconds: 2));
@@ -100,6 +112,4 @@ class LoadingScreenState extends State<LoadingScreen> {
       throw Exception('Failed to load sessions');
     }
   }
-
 }
-

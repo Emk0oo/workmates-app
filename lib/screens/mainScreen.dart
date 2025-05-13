@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:workmates/models/Session.dart';
 import 'package:workmates/data/global_data.dart';
+import 'package:workmates/screens/loginScreen.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -57,6 +58,16 @@ class _MainScreenState extends State<MainScreen> {
     return DateFormat('dd/MM/yyyy • HH:mm').format(date);
   }
 
+  void _logout() {
+    // Réinitialiser le token
+    appToken = "";
+
+    // Alternative pour naviguer vers l'écran de connexion
+    Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (context) => const LoginScreen()),
+        (Route<dynamic> route) => false);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -70,6 +81,11 @@ class _MainScreenState extends State<MainScreen> {
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: _fetchSessions,
+          ),
+          IconButton(
+            icon: const Icon(Icons.logout),
+            onPressed: _logout,
+            tooltip: 'Déconnexion',
           ),
         ],
       ),
