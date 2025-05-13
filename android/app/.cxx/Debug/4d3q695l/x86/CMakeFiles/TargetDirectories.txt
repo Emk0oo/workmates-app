@@ -1,2 +1,0 @@
-C:/Users/diasi/Documents/dev/workmates/android/app/.cxx/Debug/4d3q695l/x86/CMakeFiles/edit_cache.dir
-C:/Users/diasi/Documents/dev/workmates/android/app/.cxx/Debug/4d3q695l/x86/CMakeFiles/rebuild_cache.dir
